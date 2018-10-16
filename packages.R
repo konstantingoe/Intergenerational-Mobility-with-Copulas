@@ -33,6 +33,7 @@ pacman::p_load(
   rio,
   gridExtra,
   cowplot,
+  rgl,
   VineCopula,
   grid,
   scatterplot3d,

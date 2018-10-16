@@ -5,12 +5,17 @@ rm(list = ls())
 
 # Packages
 source("packages.R")
+source("functions.R")
+
+
 
 ### We should think about only considering nonzero obs in both variables
 
 mydata=read.csv(file="test_60er.csv",head=TRUE,sep=";")
 
 mydata <- select(mydata, one_of(c("schnittek_einzel_32", "par_inc_einzel")))
+
+## check these family and parameter values in the copula package
 
 # pseudo obs
 var_a <- pobs(mydata)[,2]
@@ -20,6 +25,7 @@ selectedCopula60 <- BiCopSelect(var_a, var_b, familyset = NA)
 selectedCopula60
 selectedCopula60$family
 selectedCopula60$par
+
 # double check!
 survgumbel <- surGumbelCopula(param = 1)
 set.seed(500)
