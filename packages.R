@@ -34,6 +34,7 @@ pacman::p_load(
   gridExtra,
   cowplot,
   rgl,
+  plotly,
   VineCopula,
   grid,
   scatterplot3d,

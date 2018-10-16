@@ -29,7 +29,7 @@ selectedCopula60$par
 # double check!
 survgumbel <- surGumbelCopula(param = 1)
 set.seed(500)
-m <- pobs(as.matrix(mydata.2))
+m <- pobs(as.matrix(mydata))
 fit <- fitCopula(survgumbel,m,method="mpl")
 coef(fit)
 # muy buen!
@@ -37,6 +37,7 @@ coef(fit)
 
 # plotting it it looks like this:
 persp(surGumbelCopula(1.17), dCopula)
+
 #sampling from it we can do this easily:
 u <- rCopula(3965,surGumbelCopula(1.17))
 plot(u[,1],u[,2],pch='.',col='blue')
@@ -120,6 +121,11 @@ cdf_mvd <- pMvdc(v, my_dist_60)
 par(mfrow = c(1, 2))
 scatterplot3d(v[,1],v[,2], pdf_mvd, color="red", main="Density", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
 scatterplot3d(v[,1],v[,2], cdf_mvd, color="red", main="CDF", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
+
+par(mfrow = c(1, 2))
+den3d <- kde2d(v[,1],v[,2])
+plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface()
+
 #setting the range over childs income and parents income 
 persp(my_dist_60, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Density")
 contour(my_dist_60, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Contour plot")
