@@ -1,7 +1,7 @@
 # Preparing R -------------------------------------------------------------
 rm(list = ls())
 
-setwd("/Users/konstantingobler/Desktop/Lebenseinkommen Projekt/New/DIW")
+#setwd("/Users/konstantingobler/Desktop/Lebenseinkommen Projekt/New/DIW")
 
 # Packages
 source("packages.R")
