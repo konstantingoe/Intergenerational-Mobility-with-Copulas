@@ -16,17 +16,8 @@ mydata <- mydata %>%
 
 min(mydata$schnittek_einzel_32)
 
-# fitting pseudo observations because copulas only accept values in the 
-# unit interval
+selectedCopula <- pre.marginals.copula(data = mydata)
 
-var_a <- pobs(mydata)[,2]
-var_b <- pobs(mydata)[,1]
-
-
-selectedCopula <- BiCopSelect(var_a, var_b, familyset = NA)
-selectedCopula
-selectedCopula$family
-selectedCopula$par
 
 ## checking some goodness of fit statistics
 ## here by basically doing the same thing backwards to see whether the parameter

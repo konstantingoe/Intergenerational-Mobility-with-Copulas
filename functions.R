@@ -7,6 +7,6 @@ pre.marginals.copula <- function(data= data) {
   
   selectedCopula <- BiCopSelect(var_a, var_b, familyset = NA)
   
-  familyparam <- c(selectedCopula$family, c(selectedCopula$par))
+  familyparam <- c(selectedCopula$family, selectedCopula$par, selectedCopula$par2)
 }
 
