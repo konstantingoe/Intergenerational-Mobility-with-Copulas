@@ -126,7 +126,24 @@ scatterplot3d(v[,1],v[,2], pdf_mvd, color="red", main="Density", xlab = "u1", yl
 scatterplot3d(v[,1],v[,2], cdf_mvd, color="red", main="CDF", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
 
 den3d <- kde2d(v[,1],v[,2])
-plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface() 
+plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
+  z = list(
+    show=TRUE,
+    usecolormap=TRUE,
+    highlightcolor="#ff0000",
+    project=list(z=TRUE)
+  )
+)
+) %>%
+  layout(
+    scene = list(
+      camera=list(
+        eye = list(x=1.87, y=0.88, z=-0.64)
+      )
+    )
+  )
+
+
 
 #setting the range over childs income and parents income 
 persp(my_dist_60, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Density")
