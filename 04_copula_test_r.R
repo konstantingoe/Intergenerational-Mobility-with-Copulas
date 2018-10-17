@@ -2,6 +2,8 @@
 rm(list = ls())
 
 #setwd("/Users/konstantingobler/Desktop/Lebenseinkommen Projekt/New/DIW")
+setwd("D:/data/tempdata")
+
 
 # Packages
 source("packages.R")
