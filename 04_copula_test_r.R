@@ -36,6 +36,18 @@ coef(fit)
 # 1.2 corresponds to the one we retrieved from BiCopSelect()
 # muy bien
 
+bb7copula <- BB7Copula(param = c(1,1))
+set.seed(500)
+fit <- fitCopula(bb7copula,m,method="mpl")
+param <- coef(fit)
+
+overview <- BiCopEstList(m[,1], m[,2],rotations = T)
+
+min(overview$summary$AIC) # BB7 copula!
+min(overview$summary$BIC) # rotated Gumbel copula! (survGumbel)
+max(overview$summary$logLik) #families 8,10
+
+
 ###################
 
 # hence we now know that the copula (the joint rank transformed distribution)
