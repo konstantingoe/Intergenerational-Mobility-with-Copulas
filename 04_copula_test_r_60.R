@@ -1,15 +1,9 @@
 # Preparing R -------------------------------------------------------------
 rm(list = ls())
 
-#setwd("/Users/konstantingobler/Desktop/Lebenseinkommen Projekt/New/DIW")
-
 # Packages
 source("packages.R")
 source("functions.R")
-
-
-
-### We should think about only considering nonzero obs in both variables
 
 mydata=read.csv(file="test_60er.csv",head=TRUE,sep=";")
 
@@ -26,7 +20,6 @@ m <- pobs(as.matrix(mydata))
 fit <- fitCopula(survgumbel,m,method="mpl")
 coef(fit)
 # muy buen!
-
 
 # plotting it it looks like this:
 persp(surGumbelCopula(par), dCopula)
@@ -46,6 +39,7 @@ BiCopChiPlot(u[,1],u[,2], PLOT=TRUE, mode="NULL")
 
 BiCopKPlot(u[,1],u[,2], PLOT=TRUE)
 
+# recode zeros
 mydata.1 <- mydata %>% 
   mutate(kidsincome = ifelse(schnittek_einzel_32==0,1, schnittek_einzel_32)) %>% 
   mutate(parentsincome = ifelse(par_inc_einzel==0,1,par_inc_einzel))
@@ -73,7 +67,7 @@ ggplot(data = mydata.1) +
   guides(fill=guide_legend(title="Empirical Density"))+
   theme_classic()
 
-ggsave("parentsdist.pdf")
+ggsave("parentsdist_60.pdf")
 
 # here choose gamma! 
 
@@ -102,7 +96,7 @@ ggplot(data = mydata.1) +
   coord_cartesian(ylim=c(0, 0.0000205))+
   theme_classic()
 
-ggsave("kidsdist.pdf")
+ggsave("kidsdist_60.pdf")
 ## here choose gamma as well!
 
 
@@ -122,8 +116,10 @@ cdf_mvd <- pMvdc(v, my_dist_60)
 
 # 3D plain scatterplot of the generated bivariate distribution
 par(mfrow = c(1, 2))
-scatterplot3d(v[,1],v[,2], pdf_mvd, color="red", main="Density", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
 scatterplot3d(v[,1],v[,2], cdf_mvd, color="red", main="CDF", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
+
+#the following two are equivalent!
+scatterplot3d(v[,1],v[,2], pdf_mvd, color="red", main="Density", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
 
 den3d <- kde2d(v[,1],v[,2])
 plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
@@ -145,7 +141,7 @@ plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
 
 
 
-#setting the range over childs income and parents income 
+#setting suitable range over childs income and parents income 
 persp(my_dist_60, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Density")
 contour(my_dist_60, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Contour plot")
 persp(my_dist_60, pMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "CDF")

@@ -1,12 +1,9 @@
 # Preparing R -------------------------------------------------------------
 rm(list = ls())
 
-#setwd("/Users/konstantingobler/Desktop/Lebenseinkommen Projekt/New/DIW")
-
 # Packages
 source("packages.R")
-
-### We should think about only considering nonzero obs in both variables
+source("functions.R")
 
 mydata=read.csv(file="test.csv",head=TRUE,sep=";")
 
@@ -16,7 +13,11 @@ mydata <- mydata %>%
 
 min(mydata$schnittek_einzel_32)
 
+mydata <- select(mydata, one_of(c("schnittek_einzel_32", "par_inc_einzel")))
+
 selectedCopula <- pre.marginals.copula(data = mydata)
+par <- selectedCopula[2]
+par2 <- selectedCopula[3]
 
 
 ## checking some goodness of fit statistics
@@ -27,16 +28,12 @@ selectedCopula <- pre.marginals.copula(data = mydata)
 ## copulas such as the Joe-Clayton (BB7) copula's more flexible structure
 ## allows for different non-zero lower and upper tail dependence coefficien
 
-# note that we can only test the first parameter:  
-## building subsample
-mydata.2 <- select(mydata, one_of(c("schnittek_einzel_32", "par_inc_einzel")))
-
-BB7.cop <- joeBiCopula(param = 2)
+survgumbel <- surGumbelCopula(param = 1)
 set.seed(500)
-m <- pobs(as.matrix(mydata.2))
-fit <- fitCopula(BB7.cop,m,method="mpl")
+m <- pobs(as.matrix(mydata))
+fit <- fitCopula(survgumbel,m,method="mpl")
 coef(fit)
-# 1.1 corresponds to the one we retrieved from BiCopSelect()
+# 1.2 corresponds to the one we retrieved from BiCopSelect()
 # muy bien
 
 ###################
@@ -45,26 +42,21 @@ coef(fit)
 # is the BB7 with parameters p1=1.05 and p2=0.31
 
 # plotting it it looks like this:
-persp(BB7Copula(c(1.05, 0.31)), dCopula)
+persp(surGumbelCopula(par), dCopula)
 #sampling from it we can do this easily:
-u <- rCopula(3965,BB7Copula(c(1.05, 0.31)))
+u <- rCopula(3965,surGumbelCopula(par))
 plot(u[,1],u[,2],pch='.',col='blue')
 cor(u,method='spearman')
 pairs.panels(u)
+pairs.panels(m)
 
 # looks a lot like independece which is totally fine since the spearmanR is 
 # only 0.22
 
-#and compared to original data (as inteded the correlation structure prevails)
-cor(mydata.2,method='spearman')
-pairs.panels(mydata.2)
-#compared to our true data (transformed to unit interval):
-cor(m,method='spearman')
-pairs.panels(m)
 
 # it can also be nice to check the scatterplot fitting a linear line
-plot(mydata.2$par_inc_einzel, mydata.2$schnittek_einzel_32, pch='.')
-abline(lm(mydata.2$par_inc_einzel~mydata.2$schnittek_einzel_32),col='red',lwd=1)
+#plot(mydata.2$par_inc_einzel, mydata.2$schnittek_einzel_32, pch='.')
+#abline(lm(mydata.2$par_inc_einzel~mydata.2$schnittek_einzel_32),col='red',lwd=1)
 
 ## before generating the multivariate distribution using our copula BB7
 ## we should put some thought into our marginal distributions of par_inc_einzel
@@ -72,13 +64,13 @@ abline(lm(mydata.2$par_inc_einzel~mydata.2$schnittek_einzel_32),col='red',lwd=1)
 
 # this is actually the crucial part:
 #remove zeros in order to be able to check log- based distributions
-mydata.3 <- mydata.2 %>% 
+mydata.1 <- mydata %>% 
   mutate(kidsincome = ifelse(schnittek_einzel_32==0,1, schnittek_einzel_32)) %>% 
   mutate(parentsincome = ifelse(par_inc_einzel==0,1,par_inc_einzel))
 
 # evaluate marginal distribution via descdist
 # start with parentsincome
-descdist(mydata.3$parentsincome, discrete=FALSE, boot=5000)
+descdist(mydata.1$parentsincome, discrete=FALSE, boot=5000)
 #summary statistics
 #------
 #  min:  0   max:  362951 
