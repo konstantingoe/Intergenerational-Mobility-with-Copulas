@@ -5,79 +5,57 @@ rm(list = ls())
 source("packages.R")
 source("functions.R")
 
-mydata=read.csv(file="test.csv",head=TRUE,sep=";")
-
-#remove negative values in kids income
-mydata <- mydata %>% 
-  mutate(schnittek_einzel_32= ifelse(schnittek_einzel_32<0,0,schnittek_einzel_32))  
-
-min(mydata$schnittek_einzel_32)
+mydata=read.csv(file="test_70er.csv",head=TRUE,sep=";")
 
 mydata <- select(mydata, one_of(c("schnittek_einzel_32", "par_inc_einzel")))
 
-selectedCopula <- pre.marginals.copula(data = mydata)
+selectedCopula <- pre.marginals.copula(data=mydata)
 par <- selectedCopula[2]
-par2 <- selectedCopula[3]
+par2 <- selectedCopula[3] 
+## check these family and parameter values in the copula package
+# 19 = rotated BB7 copula (180 degrees; “survival BB7”)
 
 
-## checking some goodness of fit statistics
-## here by basically doing the same thing backwards to see whether the parameter
-## estimates are robust 
-## BB7 copula is a special case of the typically single-parameter copulas
-## subsumed by the so called Archimedean family: two-parameter Archimedean
-## copulas such as the Joe-Clayton (BB7) copula's more flexible structure
-## allows for different non-zero lower and upper tail dependence coefficien
-
+# double check!
 survgumbel <- surGumbelCopula(param = 1)
 set.seed(500)
 m <- pobs(as.matrix(mydata))
 fit <- fitCopula(survgumbel,m,method="mpl")
 coef(fit)
-# 1.2 corresponds to the one we retrieved from BiCopSelect()
-# muy bien
-
-###################
-
-# hence we now know that the copula (the joint rank transformed distribution)
-# is the BB7 with parameters p1=1.05 and p2=0.31
+# would also be ok probably!
 
 # plotting it it looks like this:
-persp(surGumbelCopula(par), dCopula)
+persp(surBB7Copula(param = c(par, par2)), dCopula)
+
 #sampling from it we can do this easily:
-u <- rCopula(3965,surGumbelCopula(par))
+u <- rCopula(3965,surBB7Copula(param = c(par, par2)))
 plot(u[,1],u[,2],pch='.',col='blue')
 cor(u,method='spearman')
 pairs.panels(u)
 pairs.panels(m)
 
-# looks a lot like independece which is totally fine since the spearmanR is 
-# only 0.22
+BiCopChiPlot(u[,1],u[,2], PLOT=TRUE, mode="NULL")
+# λi measures a distance of a data point (ui1,ui2) to
+# the center of the bivariate data set
+# χi corresponds to a correlation coefficient
+# (λi,χi) will tend to be located above zero for positively dependent margins
 
+BiCopKPlot(u[,1],u[,2], PLOT=TRUE)
 
-# it can also be nice to check the scatterplot fitting a linear line
-#plot(mydata.2$par_inc_einzel, mydata.2$schnittek_einzel_32, pch='.')
-#abline(lm(mydata.2$par_inc_einzel~mydata.2$schnittek_einzel_32),col='red',lwd=1)
-
-## before generating the multivariate distribution using our copula BB7
-## we should put some thought into our marginal distributions of par_inc_einzel
-## and schnittek_einzel_32
-
-# this is actually the crucial part:
-#remove zeros in order to be able to check log- based distributions
+# recode zeros
 mydata.1 <- mydata %>% 
   mutate(kidsincome = ifelse(schnittek_einzel_32==0,1, schnittek_einzel_32)) %>% 
   mutate(parentsincome = ifelse(par_inc_einzel==0,1,par_inc_einzel))
 
+###### parents income #######
 
-# evaluate marginal distribution via descdist
-# start with parentsincome
 descdist(mydata.1$parentsincome, discrete=FALSE, boot=5000)
 # could again be Lognormal Weibull or Gamma
 fit2_lognormal <- fitdist(mydata.1$parentsincome, "lnorm")
 
 fit2_gamma <- fitdist(mydata.1$parentsincome, "gamma", method = "mme")
 
-fit2_weibull <- fitdist(mydata.1$parentsincome, "weibull", method = "mge")
+fit2_weibull <- fitdist(mydata.1$parentsincome, "weibull")
 
 #ggplot of distributions
 
@@ -92,14 +70,14 @@ ggplot(data = mydata.1) +
   guides(fill=guide_legend(title="Empirical Density"))+
   theme_classic()
 
-ggsave("parentsdist.pdf")
+ggsave("parentsdist_70.pdf")
 
-# here choose weibull!!!! 
+# here choose lognormal! 
 
 ####### kids income ######
 
 descdist(mydata.1$kidsincome, discrete=FALSE, boot=5000)
-# again looks more like a gamma mixture
+# again looks more like a gamma 
 
 fit2_lognormalkids <- fitdist(mydata.1$kidsincome, "lnorm")
 
@@ -121,28 +99,29 @@ ggplot(data = mydata.1) +
   coord_cartesian(ylim=c(0, 0.0000205))+
   theme_classic()
 
-ggsave("kidsdist.pdf")
-## here choose gamma!
+ggsave("kidsdist_70.pdf")
+## here choose gamma (slightly right skewed)!
 
 
+### thus Copula: SurvivalBB7
+### Marginal Parents income: lognormal
+### Marginal Kids income: Gamma
 
-# Generate the multivariate distribution 
-# here margins refers to the marginal distribution of the input variables which we choose 
-# in a way that they represent the distributional structure of the marginals present
+my_dist_70 <- mvdc(surBB7Copula(param = c(par, par2)), margins = c("lnorm","gamma"), paramMargins = list(list(meanlog = fit2_lognormal$estimate[1], sdlog = fit2_lognormal$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 
-my_dist <- mvdc(surGumbelCopula(par), margins = c("weibull","gamma"), paramMargins = list(list(shape = fit2_weibull$estimate[1], scale = fit2_weibull$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
-
-v <- rMvdc(50000, my_dist)
+v <- rMvdc(50000, my_dist_70)
 #write.csv(v, "v.csv")
 
 # Compute the density
-pdf_mvd <- dMvdc(v, my_dist)
+pdf_mvd <- dMvdc(v, my_dist_70)
 # Compute the CDF
-cdf_mvd <- pMvdc(v, my_dist)
+cdf_mvd <- pMvdc(v, my_dist_70)
 
 # 3D plain scatterplot of the generated bivariate distribution
 par(mfrow = c(1, 2))
 scatterplot3d(v[,1],v[,2], cdf_mvd, color="red", main="CDF", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
+
+#the following two are equivalent!
 scatterplot3d(v[,1],v[,2], pdf_mvd, color="red", main="Density", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
 
 den3d <- kde2d(v[,1],v[,2])
@@ -165,29 +144,26 @@ plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
 
 
 
-#setting the range over childs income and parents income 
-persp(my_dist, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Density")
-contour(my_dist, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Contour plot")
-persp(my_dist, pMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "CDF")
-contour(my_dist, pMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Contour plot")
+#setting suitable range over childs income and parents income 
+persp(my_dist_70, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Density")
+contour(my_dist_70, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Contour plot")
+persp(my_dist_70, pMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "CDF")
+contour(my_dist_70, pMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Contour plot")
 
 # Plot the data for a visual comparison
 plot(mydata$par_inc_einzel, mydata$schnittek_einzel_32, main = 'Test dataset x and y', col = "blue")
-points(v[,1], v[,2], col = 'red')
+points(v[,1], v[,2], col = '#FF000020', cex=0.5)
 legend('bottomright', c('Observed', 'Simulated'), col = c('blue', 'red'), pch=21)
 
-cor(mydata.2, method = "kendall")
-cor(mydata.2, method = "spearman")
+cor(mydata.1, method = "kendall")
+cor(mydata.1, method = "spearman")
 
 cor(v, method = "kendall")
 cor(v, method = "spearman")
 
 # looks good... 
-
-# we could play around with gamma and weibull..
 pairs.panels(mydata)
 pairs.panels(v)
 
 
-#ggplot(data = mydata, mapping = aes(x = var_a, y = var_b)) +  geom_point() + geom_smooth()
 
