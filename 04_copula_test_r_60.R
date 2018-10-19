@@ -102,7 +102,7 @@ ggsave("kidsdist_60.pdf")
 
 ### thus Copula: Survival Gumbel
 ### Marginal Parents income: Gamma
-### Marginal Kids income: Weibull
+### Marginal Kids income: Gamma
 
 my_dist_60 <- mvdc(surGumbelCopula(par), margins = c("gamma","gamma"), paramMargins = list(list(shape = fit2_gamma$estimate[1], rate = fit2_gamma$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 

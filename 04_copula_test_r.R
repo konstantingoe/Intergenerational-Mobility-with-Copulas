@@ -102,48 +102,67 @@ legend('topright',c('Fitted lognormal',"Fitted Exponential"),col=c('red',"green"
 
 ##### now kidsincome ####
 
-descdist(mydata.3$kidsincome, discrete=FALSE, boot=5000)
 
-#summary statistics
-#------
-#  min:  0   max:  309455 
-#median:  37767 
-#mean:  41401 
-#estimated sd:  28449 
-#estimated skewness:  1.4 
-#estimated kurtosis:  8.6 
+descdist(mydata.1$parentsincome, discrete=FALSE, boot=5000)
+# could again be Lognormal Weibull or Gamma
+fit2_lognormal <- fitdist(mydata.1$parentsincome, "lnorm")
 
-# this could be either gamma or lognormal or Weibull but the fit will not be very accurate
-fit2_lognormalkids <- fitdist(mydata.3$kidsincome, "lnorm")
-meanlog_b <- fit2_lognormalkids$estimate[1]
-sdlog_b <- fit2_lognormalkids$estimate[2]
+fit2_gamma <- fitdist(mydata.1$parentsincome, "gamma", method = "mme")
 
-fit2_gammakids <- fitdist(mydata.3$kidsincome, "gamma", method = "mme")
-summary(fit2_gammakids)
-shape_b <- fit2_gammakids$estimate[1]
-rate_b <- fit2_gammakids$estimate[2]
+fit2_weibull <- fitdist(mydata.1$parentsincome, "weibull", method = "mge")
 
-fit2_weibullkids <- fitdist(mydata.3$kidsincome, "weibull")
-summary(fit2_weibullkids)
-shapeweibull_b <- fit2_weibullkids$estimate[1]
-scaleweibull_b <- fit2_weibullkids$estimate[2]
+#ggplot of distributions
 
+ggplot(data = mydata.1) +
+  geom_histogram(data = as.data.frame(mydata.1$parentsincome), aes(x=mydata.1$parentsincome, y=..density.. , fill="histogram"), colour = NA ,alpha = 0.5) +
+  geom_line(aes(x=mydata.1$parentsincome, y=dgamma(mydata.1$parentsincome,fit2_gamma$estimate[1], fit2_gamma$estimate[2]), col="gamma distribution"), alpha = 0.7, size = 1) + 
+  geom_line(aes(x=mydata.1$parentsincome, y=dweibull(mydata.1$parentsincome,fit2_weibull$estimate[1], fit2_weibull$estimate[2]), col="weibull distribution"), alpha = 0.7, size = 1) + 
+  geom_line(aes(x=mydata.1$parentsincome, y=dlnorm(mydata.1$parentsincome,fit2_lognormal$estimate[1], fit2_lognormal$estimate[2]), col="lognormal distribution"), alpha = 0.7, size = 1) + 
+  xlab("Parents Income in €") +
+  ggtitle("Comparing marginal densities for parents income")+
+  guides(col=guide_legend(title="Distributional Families"))+
+  guides(fill=guide_legend(title="Empirical Density"))+
+  theme_classic()
 
-hist(mydata.3$kidsincome,breaks=80,main='childrens income',density=30,col='cyan',freq=F)
-lines(seq(1,309455,80),dlnorm(seq(1,309455,80),meanlog_b,sdlog_b),col='red',lwd=2)
-lines(seq(1,309455,80),dgamma(seq(1,309455,80),shape_b, rate_b), col="green", lwd=2)
-lines(seq(1,309455,80),dweibull(seq(1,309455,80), shapeweibull_b, scaleweibull_b), col="orange", lwd=2)
-legend('topright',c('Fitted lognormal',"Fitted Gamma", "Fitted Weibull"),col=c('red',"green", "orange"),lwd=2)
+ggsave("parentsdist.pdf")
 
-#we could try Weibull or Gamma
+# here choose weibull!!!! 
+
+####### kids income ######
+
+descdist(mydata.1$kidsincome, discrete=FALSE, boot=5000)
+# again looks more like a gamma mixture
+
+fit2_lognormalkids <- fitdist(mydata.1$kidsincome, "lnorm")
+
+fit2_gammakids <- fitdist(mydata.1$kidsincome, "gamma", method = "mme")
+
+fit2_weibullkids <- fitdist(mydata.1$kidsincome, "weibull")
+
+#ggplot of distributions
+
+ggplot(data = mydata.1) +
+  geom_histogram(data = as.data.frame(mydata.1$kidsincome), aes(x=mydata.1$kidsincome, y=..density.. , fill="histogram"), colour = NA ,alpha = 0.5) +
+  geom_line(aes(x=mydata.1$kidsincome, y=dgamma(mydata.1$kidsincome,fit2_gammakids$estimate[1], fit2_gammakids$estimate[2]), col="gamma distribution"), alpha = 0.7, size = 1) + 
+  geom_line(aes(x=mydata.1$kidsincome, y=dweibull(mydata.1$kidsincome,fit2_weibullkids$estimate[1], fit2_weibullkids$estimate[2]), col="weibull distribution"), alpha = 0.7, size = 1) + 
+  geom_line(aes(x=mydata.1$kidsincome, y=dlnorm(mydata.1$kidsincome,fit2_lognormalkids$estimate[1], fit2_lognormalkids$estimate[2]), col="lognormal distribution"), alpha = 0.7, size = 1) + 
+  xlab("Childrens Income in €") +
+  ggtitle("Comparing marginal densities for childrens income")+
+  guides(col=guide_legend(title="Distributional Families"))+
+  guides(fill=guide_legend(title="Empirical Density"))+
+  coord_cartesian(ylim=c(0, 0.0000205))+
+  theme_classic()
+
+ggsave("kidsdist.pdf")
+## here choose gamma!
+
 
 
 # Generate the multivariate distribution 
 # here margins refers to the marginal distribution of the input variables which we choose 
 # in a way that they represent the distributional structure of the marginals present
 
-#my_dist <- mvdc(BB7Copula(param = c(1.05,0.31)), margins = c("lnorm","gamma"),   paramMargins = list(list(meanlog = meanlog_a, sdlog = sdlog_a), list(shape = shape_b, rate = rate_b)))
-my_dist <- mvdc(BB7Copula(param = c(1.05,0.31)), margins = c("lnorm","weibull"), paramMargins = list(list(meanlog = meanlog_a, sdlog = sdlog_a), list(shape = shapeweibull_b, scale = scaleweibull_b)))
+my_dist <- mvdc(surGumbelCopula(par), margins = c("weibull","gamma"), paramMargins = list(list(shape = fit2_weibull$estimate[1], scale = fit2_weibull$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 
 v <- rMvdc(50000, my_dist)
 #write.csv(v, "v.csv")
@@ -155,8 +174,29 @@ cdf_mvd <- pMvdc(v, my_dist)
 
 # 3D plain scatterplot of the generated bivariate distribution
 par(mfrow = c(1, 2))
-scatterplot3d(v[,1],v[,2], pdf_mvd, color="red", main="Density", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
 scatterplot3d(v[,1],v[,2], cdf_mvd, color="red", main="CDF", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
+scatterplot3d(v[,1],v[,2], pdf_mvd, color="red", main="Density", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
+
+den3d <- kde2d(v[,1],v[,2])
+plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
+  z = list(
+    show=TRUE,
+    usecolormap=TRUE,
+    highlightcolor="#ff0000",
+    project=list(z=TRUE)
+  )
+)
+) %>%
+  layout(
+    scene = list(
+      camera=list(
+        eye = list(x=1.87, y=0.88, z=-0.64)
+      )
+    )
+  )
+
+
+
 #setting the range over childs income and parents income 
 persp(my_dist, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Density")
 contour(my_dist, dMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Contour plot")
@@ -177,7 +217,7 @@ cor(v, method = "spearman")
 # looks good... 
 
 # we could play around with gamma and weibull..
-pairs.panels(mydata.2)
+pairs.panels(mydata)
 pairs.panels(v)
 
 
