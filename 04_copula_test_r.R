@@ -42,11 +42,8 @@ fit <- fitCopula(bb7copula,m,method="mpl")
 param <- coef(fit)
 
 overview <- BiCopEstList(m[,1], m[,2],rotations = T)
-
-min(overview$summary$AIC) # BB7 copula!
-min(overview$summary$BIC) # rotated Gumbel copula! (survGumbel)
-max(overview$summary$logLik) #families 8,10
-
+test <- overview$summary
+arrange(test, AIC, BIC)
 
 ###################
 
