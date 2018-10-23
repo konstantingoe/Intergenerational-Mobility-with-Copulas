@@ -21,6 +21,12 @@ fit <- fitCopula(survgumbel,m,method="mpl")
 coef(fit)
 # muy buen!
 
+# alternatively use this one (lower BIC):
+overview <- BiCopEstList(m[,1], m[,2],rotations = T)
+test <- overview$summary
+arrange(test, AIC, BIC)
+# confirm SurvGumbel!
+
 # plotting it it looks like this:
 persp(surGumbelCopula(par), dCopula)
 

@@ -36,14 +36,18 @@ coef(fit)
 # 1.2 corresponds to the one we retrieved from BiCopSelect()
 # muy bien
 
+
+# alternatively use this one (lower BIC):
+overview <- BiCopEstList(m[,1], m[,2],rotations = T)
+test <- overview$summary
+arrange(test, AIC, BIC)
+
 bb7copula <- BB7Copula(param = c(1,1))
 set.seed(500)
 fit <- fitCopula(bb7copula,m,method="mpl")
 param <- coef(fit)
 
-overview <- BiCopEstList(m[,1], m[,2],rotations = T)
-test <- overview$summary
-arrange(test, AIC, BIC)
+
 
 ###################
 
@@ -52,12 +56,18 @@ arrange(test, AIC, BIC)
 
 # plotting it it looks like this:
 persp(surGumbelCopula(par), dCopula)
+# and BB7
+persp(BB7Copula(param), dCopula)
+
 #sampling from it we can do this easily:
 u <- rCopula(3965,surGumbelCopula(par))
+c <- rCopula(3965, BB7Copula(param))
 plot(u[,1],u[,2],pch='.',col='blue')
 cor(u,method='spearman')
 pairs.panels(u)
 pairs.panels(m)
+pairs.panels(c)
+
 
 # looks a lot like independece which is totally fine since the spearmanR is 
 # only 0.22
@@ -140,8 +150,10 @@ ggsave("kidsdist.pdf")
 # in a way that they represent the distributional structure of the marginals present
 
 my_dist <- mvdc(surGumbelCopula(par), margins = c("weibull","gamma"), paramMargins = list(list(shape = fit2_weibull$estimate[1], scale = fit2_weibull$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
+my_dist_bb7 <- mvdc(BB7Copula(param), margins = c("weibull","gamma"), paramMargins = list(list(shape = fit2_weibull$estimate[1], scale = fit2_weibull$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 
 v <- rMvdc(50000, my_dist)
+x <- rMvdc(50000, my_dist_bb7)
 #write.csv(v, "v.csv")
 
 # Compute the density
@@ -172,6 +184,23 @@ plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
     )
   )
 
+den3d.bb7 <- kde2d(x[,1],x[,2])
+plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
+  z = list(
+    show=TRUE,
+    usecolormap=TRUE,
+    highlightcolor="#ff0000",
+    project=list(z=TRUE)
+  )
+)
+) %>%
+  layout(
+    scene = list(
+      camera=list(
+        eye = list(x=1.87, y=0.88, z=-0.64)
+      )
+    )
+  )
 
 
 #setting the range over childs income and parents income 
@@ -196,6 +225,7 @@ cor(v, method = "spearman")
 # we could play around with gamma and weibull..
 pairs.panels(mydata)
 pairs.panels(v)
+pairs.panels(x)
 
 
 #ggplot(data = mydata, mapping = aes(x = var_a, y = var_b)) +  geom_point() + geom_smooth()

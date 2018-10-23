@@ -24,15 +24,30 @@ fit <- fitCopula(survgumbel,m,method="mpl")
 coef(fit)
 # would also be ok probably!
 
+# alternatively use this one (lower BIC):
+overview <- BiCopEstList(m[,1], m[,2],rotations = T)
+test <- overview$summary
+arrange(test, AIC, BIC)
+# tells us that 9 = BB7 Copula has the better fit!
+bb7copula <- BB7Copula(param = c(1,1))
+set.seed(500)
+fit <- fitCopula(bb7copula,m,method="mpl")
+param <- coef(fit)
+
+
 # plotting it it looks like this:
 persp(surBB7Copula(param = c(par, par2)), dCopula)
+persp(BB7Copula(param), dCopula)
 
 #sampling from it we can do this easily:
 u <- rCopula(3965,surBB7Copula(param = c(par, par2)))
+c <- rCopula(3965,BB7Copula(param))
 plot(u[,1],u[,2],pch='.',col='blue')
 cor(u,method='spearman')
 pairs.panels(u)
 pairs.panels(m)
+pairs.panels(c)
+
 
 BiCopChiPlot(u[,1],u[,2], PLOT=TRUE, mode="NULL")
 # λi measures a distance of a data point (ui1,ui2) to
@@ -108,8 +123,10 @@ ggsave("kidsdist_70.pdf")
 ### Marginal Kids income: Gamma
 
 my_dist_70 <- mvdc(surBB7Copula(param = c(par, par2)), margins = c("lnorm","gamma"), paramMargins = list(list(meanlog = fit2_lognormal$estimate[1], sdlog = fit2_lognormal$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
+my_dist_70_bb7 <- mvdc(BB7Copula(param), margins = c("lnorm","gamma"), paramMargins = list(list(meanlog = fit2_lognormal$estimate[1], sdlog = fit2_lognormal$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 
 v <- rMvdc(50000, my_dist_70)
+x <- rMvdc(50000, my_dist_70_bb7)
 #write.csv(v, "v.csv")
 
 # Compute the density
@@ -142,6 +159,23 @@ plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
     )
   )
 
+den3dx <- kde2d(x[,1],x[,2])
+plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
+  z = list(
+    show=TRUE,
+    usecolormap=TRUE,
+    highlightcolor="#ff0000",
+    project=list(z=TRUE)
+  )
+)
+) %>%
+  layout(
+    scene = list(
+      camera=list(
+        eye = list(x=1.87, y=0.88, z=-0.64)
+      )
+    )
+  )
 
 
 #setting suitable range over childs income and parents income 
@@ -164,6 +198,7 @@ cor(v, method = "spearman")
 # looks good... 
 pairs.panels(mydata)
 pairs.panels(v)
+pairs.panels(x)
 
 
 

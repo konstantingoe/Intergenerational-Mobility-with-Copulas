@@ -24,6 +24,12 @@ fit <- fitCopula(clayton,m,method="itau")
 coef(fit)
 # would also be ok probably!
 
+# alternatively use this one (lower BIC):
+overview <- BiCopEstList(m[,1], m[,2],rotations = T)
+test <- overview$summary
+arrange(test, AIC, BIC)
+# corresponds to the chosen copula by BiCopSelect()
+
 # plotting it it looks like this:
 persp(claytonCopula(par), dCopula)
 
