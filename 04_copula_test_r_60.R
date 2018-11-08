@@ -112,6 +112,9 @@ ggsave("kidsdist_60.pdf")
 
 my_dist_60 <- mvdc(surGumbelCopula(par), margins = c("gamma","gamma"), paramMargins = list(list(shape = fit2_gamma$estimate[1], rate = fit2_gamma$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 
+save(my_dist_60, file =  "60ercop.RDA")
+
+
 v <- rMvdc(50000, my_dist_60)
 #write.csv(v, "v.csv")
 

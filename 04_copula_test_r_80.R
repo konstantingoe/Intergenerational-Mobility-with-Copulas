@@ -118,6 +118,9 @@ ggsave("kidsdist_80.pdf")
 
 my_dist_80 <- mvdc(claytonCopula(par), margins = c("gamma","gamma"), paramMargins = list(list(shape = fit2_gamma$estimate[1], rate = fit2_gamma$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 
+save(my_dist_80, file =  "80ercop.RDA")
+
+
 v <- rMvdc(50000, my_dist_80)
 #write.csv(v, "v.csv")
 

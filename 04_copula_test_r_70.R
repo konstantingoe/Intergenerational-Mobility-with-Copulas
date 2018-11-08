@@ -125,6 +125,9 @@ ggsave("kidsdist_70.pdf")
 my_dist_70 <- mvdc(surBB7Copula(param = c(par, par2)), margins = c("lnorm","gamma"), paramMargins = list(list(meanlog = fit2_lognormal$estimate[1], sdlog = fit2_lognormal$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 my_dist_70_bb7 <- mvdc(BB7Copula(param), margins = c("lnorm","gamma"), paramMargins = list(list(meanlog = fit2_lognormal$estimate[1], sdlog = fit2_lognormal$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 
+save(my_dist_70,my_dist_70_bb7, file =  "70ercop.RDA")
+
+
 v <- rMvdc(50000, my_dist_70)
 x <- rMvdc(50000, my_dist_70_bb7)
 #write.csv(v, "v.csv")

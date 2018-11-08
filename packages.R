@@ -37,6 +37,8 @@ pacman::p_load(
   plotly,
   VineCopula,
   CDVine,
+  distrEx,
+  statip,
   grid,
   scatterplot3d,
   copula,

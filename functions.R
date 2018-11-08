@@ -9,4 +9,3 @@ pre.marginals.copula <- function(data= data) {
   
   familyparam <- c(selectedCopula$family, selectedCopula$par, selectedCopula$par2)
 }
-

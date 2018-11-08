@@ -152,6 +152,8 @@ ggsave("kidsdist.pdf")
 my_dist <- mvdc(surGumbelCopula(par), margins = c("weibull","gamma"), paramMargins = list(list(shape = fit2_weibull$estimate[1], scale = fit2_weibull$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 my_dist_bb7 <- mvdc(BB7Copula(param), margins = c("weibull","gamma"), paramMargins = list(list(shape = fit2_weibull$estimate[1], scale = fit2_weibull$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 
+save(my_dist,my_dist_bb7, file =  "overallcop.RDA")
+
 v <- rMvdc(50000, my_dist)
 x <- rMvdc(50000, my_dist_bb7)
 #write.csv(v, "v.csv")
