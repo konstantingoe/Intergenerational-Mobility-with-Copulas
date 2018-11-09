@@ -16,6 +16,7 @@ pacman::p_load(
   lubridate,
   lm.beta,
   pastecs,
+  xtable,
   data.table,
   plyr,
   plm,
