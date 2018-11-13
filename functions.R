@@ -22,6 +22,21 @@ generator <- function(draws=draws){
   return(x.draws)
 }
 
+copula.generator <- function(draws=draws){
+  
+  w <- rCopula(draws, BB7Copula(par.full))
+  x <- rCopula(draws, surGumbelCopula(par.60))
+  y <- rCopula(draws, BB7Copula(par.70))
+  z <- rCopula(draws, claytonCopula(par.80))
+  
+  x.draws <- list(w,x,y,z)
+  
+  return(x.draws)
+}
+
+
+
+
 nullToNA <- function(x) {
   x[sapply(x, is.null)] <- NA
   return(x)

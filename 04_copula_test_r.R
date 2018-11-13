@@ -35,7 +35,7 @@ fit <- fitCopula(survgumbel,m,method="mpl")
 coef(fit)
 # 1.2 corresponds to the one we retrieved from BiCopSelect()
 # muy bien
-
+save(m, file = "pobsfull.RDA")
 
 # alternatively use this one (lower BIC):
 overview <- BiCopEstList(m[,1], m[,2],rotations = T)

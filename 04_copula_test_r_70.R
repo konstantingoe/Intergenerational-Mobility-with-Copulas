@@ -20,6 +20,7 @@ par2 <- selectedCopula[3]
 survgumbel <- surGumbelCopula(param = 1)
 set.seed(500)
 m <- pobs(as.matrix(mydata))
+save(m,file = "pobs70.RDA")
 fit <- fitCopula(survgumbel,m,method="mpl")
 coef(fit)
 # would also be ok probably!

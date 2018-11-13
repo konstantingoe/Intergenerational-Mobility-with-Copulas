@@ -12,6 +12,7 @@ mydata <- select(mydata, one_of(c("schnittek_einzel_32", "par_inc_einzel")))
 selectedCopula <- pre.marginals.copula(data=mydata)
 # the function chooses Clayton copula 
 par <- selectedCopula[2]
+save(par,file = "80sparameter.RDA")
 ## check these family and parameter values in the copula package
 # 19 = rotated BB7 copula (180 degrees; “survival BB7”)
 

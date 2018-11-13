@@ -12,7 +12,7 @@ mydata <- select(mydata, one_of(c("schnittek_einzel_32", "par_inc_einzel")))
 selectedCopula <- pre.marginals.copula(data=mydata)
 par <- selectedCopula[2]
 ## check these family and parameter values in the copula package
-
+save(par,file="60sparameter.RDA")
 # double check!
 survgumbel <- surGumbelCopula(param = 1)
 set.seed(500)
