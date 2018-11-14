@@ -163,6 +163,8 @@ my_dist_bb7 <- mvdc(BB7Copula(param), margins = c("weibull","gamma"), paramMargi
 
 save(my_dist,my_dist_bb7, file =  "overallcop.RDA")
 
+set.seed(1234)
+
 v <- rMvdc(50000, my_dist)
 x <- rMvdc(5000, my_dist_bb7)
 #write.csv(v, "v.csv")
