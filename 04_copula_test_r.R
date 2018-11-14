@@ -57,7 +57,16 @@ param <- coef(fit)
 # plotting it it looks like this:
 persp(surGumbelCopula(par), dCopula)
 # and BB7
-persp(BB7Copula(param), dCopula)
+persp(BB7Copula(param), dCopula,
+      xlab = "transformed x income", ylab = "transformed y income",
+      main = "Joe-Clayton Copula with ML paramter vector", phi = 20, theta = 30)
+dev.copy(pdf,'bb7copula.pdf')
+dev.off()
+
+wireframe2(BB7Copula(param), dCopula,
+           main = "Joe-Clayton Copula with ML paramter vector", shade=T, screen = list(x = -90, y = 20, z = -2))
+dev.copy(pdf,'bb7copula_alternative.pdf')
+dev.off()
 
 #sampling from it we can do this easily:
 u <- rCopula(3965,surGumbelCopula(par))
@@ -155,7 +164,7 @@ my_dist_bb7 <- mvdc(BB7Copula(param), margins = c("weibull","gamma"), paramMargi
 save(my_dist,my_dist_bb7, file =  "overallcop.RDA")
 
 v <- rMvdc(50000, my_dist)
-x <- rMvdc(50000, my_dist_bb7)
+x <- rMvdc(5000, my_dist_bb7)
 #write.csv(v, "v.csv")
 
 # Compute the density
@@ -212,9 +221,36 @@ persp(my_dist, pMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "CDF")
 contour(my_dist, pMvdc, xlim = c(0, 50000), ylim=c(0, 50000), main = "Contour plot")
 
 # Plot the data for a visual comparison
-plot(mydata$par_inc_einzel, mydata$schnittek_einzel_32, main = 'Test dataset x and y', col = "blue")
-points(v[,1], v[,2], col = 'red')
-legend('bottomright', c('Observed', 'Simulated'), col = c('blue', 'red'), pch=21)
+x <- as.data.frame(x)
+
+comparisonplot <- ggplot() +
+  geom_point(data = x, aes(V1, V2, group = 1, color="simulated data"), alpha = 0.6)+
+  geom_point(data = mydata, aes(par_inc_einzel, schnittek_einzel_32, group = 1, color="observed data"), alpha = 0.5)+
+  labs(x = "Parental Income", 
+  y = "Children's Income", 
+  title = "Real vs. Simulated income data") +
+  #scale_x_continuous(breaks = c(seq(from = 0, to = 500, by = 50)))+
+  guides(col=guide_legend(title=""))+
+  theme(legend.position = "top")
+print(comparisonplot)
+
+ggsave("comparisonplot.pdf")
+
+comparisondens <- ggplot() +
+  geom_density_2d(data = x, aes(V1, V2, group = 1, color="simulated data"))+
+  geom_density_2d(data = mydata, aes(par_inc_einzel, schnittek_einzel_32, group = 1, color="observed data"))+
+  labs(x = "Parental Income", 
+       y = "Children's Income", 
+       title = "Real vs. Simulated income data") +
+  #scale_x_continuous(breaks = c(seq(from = 0, to = 500, by = 50)))+
+  guides(col=guide_legend(title=""))+
+  theme(legend.position = "top")
+print(comparisondens)
+
+ggsave("comparisondens.pdf")
+
+
+
 
 cor(mydata.2, method = "kendall")
 cor(mydata.2, method = "spearman")
