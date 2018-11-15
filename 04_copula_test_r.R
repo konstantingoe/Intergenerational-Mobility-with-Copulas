@@ -77,6 +77,52 @@ pairs.panels(u)
 pairs.panels(m)
 pairs.panels(c)
 
+rankemp <- as.data.frame(m)
+rankcop <- as.data.frame(c)
+comparisonplotrank <- ggplot() +
+  geom_point(data = rankcop, aes(V1, V2, group = 1, color="simulated data"), alpha = 0.6)+
+  geom_point(data = rankemp, aes(par_inc_einzel, schnittek_einzel_32, group = 1, color="observed data"), alpha = 0.5)+
+  labs(x = "Parental Income", 
+       y = "Children's Income", 
+       title = "Real vs. Simulated rank-transformed income data") +
+  #scale_x_continuous(breaks = c(seq(from = 0, to = 500, by = 50)))+
+  guides(col=guide_legend(title=""))+
+  theme(legend.position = "top")
+print(comparisonplotrank)
+
+ggsave("rankscattercomparison.pdf")
+
+rankemp <- as.data.frame(m)
+rankcop <- as.data.frame(c)
+q10 <- seq(0.05, 0.95, by = 0.15)
+comparisonplotrank <- ggplot() +
+  geom_quantile(data = rankcop, aes(V1, V2, group = 1, color="simulated data"), alpha = 0.6,quantiles = q10)+
+  geom_quantile(data = rankemp, aes(par_inc_einzel, schnittek_einzel_32, group = 1, color="observed data"), alpha = 0.5,quantiles = q10)+
+  labs(x = "Parental Income", 
+       y = "Children's Income", 
+       title = "Conditional quantile regression of both the simulated and the real rank transformed data") +
+  #scale_x_continuous(breaks = c(seq(from = 0, to = 500, by = 50)))+
+  guides(col=guide_legend(title=""))+
+  theme(legend.position = "top")
+print(comparisonplotrank)
+
+ggsave("quantilecomparison.pdf")
+
+
+compdensityrank <- ggplot() +
+  geom_density_2d(data = rankcop, aes(V1, V2, group = 1, color="simulated data"), alpha = 0.6)+
+  geom_density_2d(data = rankemp, aes(par_inc_einzel, schnittek_einzel_32, group = 1, color="observed data"), alpha = 0.5)+
+  labs(x = "Parental Income", 
+       y = "Children's Income", 
+       title = "Contour density plots of both simulated and the real rank transformed data") +
+  #scale_x_continuous(breaks = c(seq(from = 0, to = 500, by = 50)))+
+  guides(col=guide_legend(title=""))+
+  theme(legend.position = "top")
+print(compdensityrank)
+
+ggsave("densityrankcomparison.pdf")
+
+
 
 # looks a lot like independece which is totally fine since the spearmanR is 
 # only 0.22
