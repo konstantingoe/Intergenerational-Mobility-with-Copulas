@@ -55,6 +55,8 @@ param <- coef(fit)
 # is the BB7 with parameters p1=1.05 and p2=0.31
 
 # plotting it it looks like this:
+#persp(surBB8Copula(c(par,par2)), dCopula)
+
 persp(surGumbelCopula(par), dCopula)
 # and BB7
 persp(BB7Copula(param), dCopula,

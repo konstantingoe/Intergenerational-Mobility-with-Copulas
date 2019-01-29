@@ -120,9 +120,10 @@ any(is.na(netto$schnittek_netto_32)) # there are missings
 sum(is.na(netto$schnittek_netto_32)) # 8 missings!
 
 netto <- filter(netto, !is.na(schnittek_netto_32))
+netto1 <- select(netto, one_of(c("schnittek_netto_32", "par_inc_netto")))
 
 #use separate fit in order to determine which copula model is adequate:
-nettopobs <- pobs(as.matrix(netto))
+nettopobs <- pobs(as.matrix(netto1))
 nettoverview <- BiCopEstList(nettopobs[,1], nettopobs[,2],rotations = T)
 nettotest <- nettoverview$summary
 arrange(nettotest, AIC, BIC)
@@ -156,6 +157,38 @@ pairs.panels(nettosample)
 #actual rank transformed dependency structure
 pairs.panels(nettopobs)
 # we get a somewhat higher spearman's correlation in out copula model
+
+
+### compare to baseline sample: first remove those rows which are missing in kids income netto:
+
+nettomat1 <- select(netto,one_of(c("schnittek_einzel_32", "par_inc_einzel"))) 
+basepobs1 <- pobs(as.matrix(nettomat1))
+base1overview <- BiCopEstList(basepobs1[,1], basepobs1[,2],rotations = T)
+base1test <- base1overview$summary
+arrange(base1test, AIC, BIC)
+#seems to be appropriate to choose family=20 -> surBB8 copula!
+loglikebase1 <- pre.marginals.copula(nettomat1)
+
+surbase1 <- surBB8Copula(param = c(loglikebase1[2], loglikebase1[3]))
+#indicates dependency particularly in the right tails!
+persp(surbase1,dCopula)
+
+#sampling from it:
+base1sample <- rCopula(3965,surbase1)
+
+cor(base1sample,method='spearman')
+#simulated dependency structure:
+pairs.panels(base1sample)
+#actual rank transformed dependency structure
+pairs.panels(basepobs1)
+# we get a somewhat higher spearman's correlation in our copula model
+
+#bivariate difference in distribution
+differencenet <- hellinger(nettosample, base1sample)
+#difference in marginals
+netdifferenceks1 <- ks.test(nettosample[,1], base1sample[,1])
+netdifferenceks2 <- ks.test(nettosample[,2], base1sample[,2])
+# statistically non-different from base sample!
 
 
 
@@ -290,38 +323,62 @@ consopobs <- pobs(as.matrix(consumptionmat))
 consoverview <- BiCopEstList(consopobs[,1], consopobs[,2],rotations = T)
 constest <- consoverview$summary
 arrange(constest, AIC, BIC)
-#seems to be appropriate to choose family=14 -> survGumbel!
-
+#seems to be appropriate to choose family=13 -> survClayton!
 loglikecons <- pre.marginals.copula(consumptionmat)
 
-student <- BiCop(family = 2, par = loglikenetto[2], par2 = loglikenetto[3])
+suclayton <- surClaytonCopula(param = loglikecons[2])
+#indicates dependency particularly in the right tails!
 
 #plot
-persp(tCopula(dim=2,loglikenetto[2],df=loglikenetto[3]),dCopula)
+persp(surClaytonCopula(param = loglikecons[2]),dCopula)
 # and more beatiful:
-persp(tCopula(dim=2,loglikenetto[2],df=loglikenetto[3]), dCopula,
-      xlab = "transformed x net income", ylab = "transformed y net income",
-      main = "Students t-Copula with ML paramter vector", phi = 20, theta = 30)
-dev.copy(pdf,'tcopula.pdf')
+persp(surClaytonCopula(param = loglikecons[2]), dCopula,
+      xlab = "transformed x consumption", ylab = "transformed y consumption",
+      main = "Survical Clayton Copula with ML paramter vector", phi = 20, theta = 30)
+dev.copy(pdf,'surclaytoncopula.pdf')
 dev.off()
 
+#sampling from it:
+consample <- rCopula(3965,surClaytonCopula(param = loglikecons[2]))
+plot(consample[,1],consample[,2],pch='.',col='blue')
 
-#note that the t-copula is symmetrical
-#The t-copula emphasizes extreme results: it is usually good for modelling phenomena
-#where there is high correlation in the extreme values (the tails of the distribution).
+cor(consample,method='spearman')
+#simulated dependency structure:
+pairs.panels(consample)
+#actual rank transformed dependency structure
+pairs.panels(consopobs)
+# we get a somewhat lower spearman's correlation in our copula model
+
+
+
+#### compare to baseline####
+
+
+consumptionmat2 <- select(consumption,one_of(c("schnittek_einzel_32", "par_inc_einzel"))) 
+basepobs2 <- pobs(as.matrix(consumptionmat2))
+base2overview <- BiCopEstList(basepobs2[,1], basepobs2[,2],rotations = T)
+base2test <- base2overview$summary
+arrange(base2test, AIC, BIC)
+#seems to be appropriate to choose family=14 -> surGumbel!
+loglikebase2 <- pre.marginals.copula(consumptionmat2)
+
+surbase2 <- surGumbelCopula(param = loglikebase2[2])
+#indicates dependency particularly in the right tails!
 
 #sampling from it:
-nettosample <- rCopula(3965,tCopula(dim=2,loglikenetto[2],df=loglikenetto[3]))
-plot(nettosample[,1],nettosample[,2],pch='.',col='blue')
+base2sample <- rCopula(3965,surbase2)
 
-cor(nettosample,method='spearman')
+cor(base2samole,method='spearman')
 #simulated dependency structure:
-pairs.panels(nettosample)
+pairs.panels(base2samole)
 #actual rank transformed dependency structure
-pairs.panels(nettopobs)
-# we get a somewhat higher spearman's correlation in out copula model
+pairs.panels(basepobs2)
+# we get a somewhat higher spearman's correlation in our copula model
 
-
-
-
+#bivariate difference in distribution
+differencecons <- hellinger(consample, base2sample)
+#difference in marginals
+differenceks1 <- ks.test(consample[,1], base2sample[,1])
+differenceks2 <- ks.test(consample[,2], base2sample[,2])
+# statistically non-different from base sample!
 
