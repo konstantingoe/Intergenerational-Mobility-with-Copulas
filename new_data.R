@@ -22,10 +22,18 @@ baseoverview <- BiCopEstList(basepobs[,1], basepobs[,2],rotations = T)
 basetest <- baseoverview$summary
 arrange(basetest, AIC, BIC)
 #seems to be appropriate to choose family=14 -> survGumbel!
+# or family <- BB7
+
 survgumbel <- surGumbelCopula(param = 1)
 basefit <- fitCopula(survgumbel,basepobs,method="mpl")
 par <- coef(basefit)[[1]]
-#plot
+
+
+bb7 <- BB7Copula(param = c(1,1))
+basefit2 <- fitCopula(bb7,basepobs,method="mpl")
+param <- coef(basefit2)
+
+#plot for  Survival Gumbel
 persp(surGumbelCopula(par), dCopula)
 # and more beatiful:
 persp(surGumbelCopula(par), dCopula,
@@ -33,8 +41,20 @@ persp(surGumbelCopula(par), dCopula,
       main = "Survival-Gumbel Copula with ML paramter vector", phi = 20, theta = 30)
 dev.copy(pdf,'survGumbelcopula.pdf')
 dev.off()
+
+
+#plot for BB7
+persp(BB7Copula(param), dCopula)
+# and more beatiful:
+persp(BB7Copula(param), dCopula,
+      xlab = "transformed x income", ylab = "transformed y income",
+      main = "Survival-Gumbel Copula with ML paramter vector", phi = 20, theta = 30)
+dev.copy(pdf,'bb7copula.pdf')
+dev.off()
+
+
 #sampling from it:
-basesample <- rCopula(3965,surGumbelCopula(par))
+basesample <- rCopula(3965,BB7Copula(param)) #rCopula(3965,surGumbelCopula(par))
 plot(basesample[,1],basesample[,2],pch='.',col='blue')
 cor(basesample,method='spearman')
 #simulated dependency structure:
@@ -107,7 +127,7 @@ ggsave("baseKidsdist.pdf")
 
 # I don't understand the error... must have something to do with the new R version -> package conflictions
 # maybe it works on windows? 
-mybasedist <- mvdc(surGumbelCopula(par), margins = c("weibull","gamma"), paramMargins = list(list(shape = fit2_weibull$estimate[1], scale = fit2_weibull$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
+mybasedist <- mvdc(BB7Copula(param), margins = c("weibull","gamma"), paramMargins = list(list(shape = fit2_weibull$estimate[1], scale = fit2_weibull$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
 
 set.seed(1234)
 
@@ -116,22 +136,19 @@ v <- rMvdc(50000, mybasedist)
 write.csv(v, "v.csv")
 
 
-#anyways! it's the same copula as before! 
-
 
 #####################################################################################
                         ########try netto copula#####
 #####################################################################################
 
-netto <- select(mydata, one_of(c("schnittek_netto_32", "par_inc_netto", "schnittek_einzel_32", "par_inc_einzel")))
+netto <- select(mydata, one_of(c("schnittek_netto_32", "par_inc_netto")))
 any(is.na(netto$schnittek_netto_32)) # there are missings
 sum(is.na(netto$schnittek_netto_32)) # 8 missings!
 
 netto <- filter(netto, !is.na(schnittek_netto_32))
-netto1 <- select(netto, one_of(c("schnittek_netto_32", "par_inc_netto")))
 
 #use separate fit in order to determine which copula model is adequate:
-nettopobs <- pobs(as.matrix(netto1))
+nettopobs <- pobs(as.matrix(netto))
 nettoverview <- BiCopEstList(nettopobs[,1], nettopobs[,2],rotations = T)
 nettotest <- nettoverview$summary
 arrange(nettotest, AIC, BIC)
@@ -167,35 +184,37 @@ pairs.panels(nettopobs)
 # we get a somewhat higher spearman's correlation in out copula model
 
 
-### compare to baseline sample: first remove those rows which are missing in kids income netto:
+#perform distance test:
+tobject <- tCopula(dim=2,loglikenetto[2],df=loglikenetto[3])
 
-nettomat1 <- select(netto,one_of(c("schnittek_einzel_32", "par_inc_einzel"))) 
-basepobs1 <- pobs(as.matrix(nettomat1))
-base1overview <- BiCopEstList(basepobs1[,1], basepobs1[,2],rotations = T)
-base1test <- base1overview$summary
-arrange(base1test, AIC, BIC)
-#seems to be appropriate to choose family=20 -> surBB8 copula!
-loglikebase1 <- pre.marginals.copula(nettomat1)
+reps <- 50
+draws <- 5000
 
-surbase1 <- surBB8Copula(param = c(loglikebase1[2], loglikebase1[3]))
-#indicates dependency particularly in the right tails!
-persp(surbase1,dCopula)
+x1 <- replicate(reps, copula.gen2(draws = 5000))
+x1 <- as.data.frame.matrix(x1)
+x1.dist <- sapply(x1, function(y) tryCatch({hellinger(y[[1]], y[[2]], lower = 0, upper = Inf, method = 1) }, error=function(e){cat("ERROR :",conditionMessage(e), "\n")}))
+repsvec <- c(1:reps)
+x1.dist <- nullToNA(x1.dist)
+x1.dist <- ldply(x1.dist, data.frame)
+x1.dist <- bind_cols(x1.dist, reps = repsvec)
 
-#sampling from it:
-base1sample <- rCopula(3965,surbase1)
+j <- ggplot(x1.dist, aes(reps, X..i.., group = 1)) +
+  #geom_bar(stat = "identity") +
+  geom_point() +
+  geom_smooth() +
+  labs(x = " No. of Repetitions", 
+       y = "Hellinger Distance", 
+       title = "Hellinger distance between gross and net income copula models") +
+  scale_x_continuous(breaks = c(seq(from = 0, to = reps, by = 10)))
+print(j)
 
-cor(base1sample,method='spearman')
-#simulated dependency structure:
-pairs.panels(base1sample)
-#actual rank transformed dependency structure
-pairs.panels(basepobs1)
-# we get a somewhat higher spearman's correlation in our copula model
+
 
 #bivariate difference in distribution
-differencenet <- hellinger(nettosample, base1sample)
+differencenet <- hellinger(nettosample, basesample)
 #difference in marginals
-netdifferenceks1 <- ks.test(nettosample[,1], base1sample[,1])
-netdifferenceks2 <- ks.test(nettosample[,2], base1sample[,2])
+netdifferenceks1 <- ks.test(nettosample[,1], basesample[,1])
+netdifferenceks2 <- ks.test(nettosample[,2], basesample[,2])
 # statistically non-different from base sample!
 
 
