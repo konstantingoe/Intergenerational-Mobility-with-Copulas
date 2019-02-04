@@ -108,6 +108,14 @@ ggsave("baseKidsdist.pdf")
 # I don't understand the error... must have something to do with the new R version -> package conflictions
 # maybe it works on windows? 
 mybasedist <- mvdc(surGumbelCopula(par), margins = c("weibull","gamma"), paramMargins = list(list(shape = fit2_weibull$estimate[1], scale = fit2_weibull$estimate[2]), list(shape = fit2_gammakids$estimate[1], rate = fit2_gammakids$estimate[2])))
+
+set.seed(1234)
+
+v <- rMvdc(50000, mybasedist)
+#x <- rMvdc(5000, my_dist_bb7)
+write.csv(v, "v.csv")
+
+
 #anyways! it's the same copula as before! 
 
 
