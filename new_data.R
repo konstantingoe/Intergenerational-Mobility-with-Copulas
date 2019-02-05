@@ -187,10 +187,10 @@ pairs.panels(nettopobs)
 #perform distance test:
 tobject <- tCopula(dim=2,loglikenetto[2],df=loglikenetto[3])
 
-reps <- 50
+reps <- 500
 draws <- 5000
 
-x1 <- replicate(reps, copula.gen2(draws = 5000))
+x1 <- replicate(reps, copula.gen2(draws = 5000, copula = tobject))
 x1 <- as.data.frame.matrix(x1)
 x1.dist <- sapply(x1, function(y) tryCatch({hellinger(y[[1]], y[[2]], lower = 0, upper = Inf, method = 1) }, error=function(e){cat("ERROR :",conditionMessage(e), "\n")}))
 repsvec <- c(1:reps)
@@ -205,21 +205,11 @@ j <- ggplot(x1.dist, aes(reps, X..i.., group = 1)) +
   labs(x = " No. of Repetitions", 
        y = "Hellinger Distance", 
        title = "Hellinger distance between gross and net income copula models") +
-  scale_x_continuous(breaks = c(seq(from = 0, to = reps, by = 10)))
+  scale_x_continuous(breaks = c(seq(from = 0, to = reps, by = 50)))
 print(j)
+ggsave("base_net_distance.pdf")
 
 
-
-#bivariate difference in distribution
-differencenet <- hellinger(nettosample, basesample)
-#difference in marginals
-netdifferenceks1 <- ks.test(nettosample[,1], basesample[,1])
-netdifferenceks2 <- ks.test(nettosample[,2], basesample[,2])
-# statistically non-different from base sample!
-
-
-
-# if we're only interested in the copula model this can be left out!
 
 #parents netto income
 descdist(netto$par_inc_netto, discrete=FALSE, boot=5000)
@@ -274,91 +264,33 @@ ggsave("nettoKidsdist.pdf")
 
 mynettodist <- mvdc(tCopula(dim=2,loglikenetto[2],df=round(loglikenetto[3])), margins = c("gamma","gamma"), paramMargins = list(list(shape = fit2_gamma_netto$estimate[1], rate = fit2_gamma_netto$estimate[2]), list(shape = fit2_gamma_nettokids$estimate[1], rate = fit2_gamma_nettokids$estimate[2])))
 nettosim <- rMvdc(5000, mynettodist)
-pdf_mvd <- dMvdc(nettosim, mynettodist)
-# Compute the CDF
-cdf_mvd <- pMvdc(nettosim, mynettodist)
-par(mfrow = c(1, 2))
-scatterplot3d(nettosim[,1],nettosim[,2], cdf_mvd, color="red", main="CDF", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
-scatterplot3d(nettosim[,1],nettosim[,2], pdf_mvd, color="red", main="Density", xlab = "u1", ylab="u2", zlab="pMvdc",pch=".")
+write.csv(nettosim, "netto.csv")
 
-den3d <- kde2d(nettosim[,1],nettosim[,2])
-plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
-  z = list(
-    show=TRUE,
-    usecolormap=TRUE,
-    highlightcolor="#ff0000",
-    project=list(z=TRUE)
-  )
-)
-) %>%
-  layout(
-    scene = list(
-      camera=list(
-        eye = list(x=1.87, y=0.88, z=-0.64)
-      )
-    )
-  )
-
-den3d.bb7 <- kde2d(x[,1],x[,2])
-plot_ly(x=den3d$x, y=den3d$y, z=den3d$z) %>% add_surface(  contours = list(
-  z = list(
-    show=TRUE,
-    usecolormap=TRUE,
-    highlightcolor="#ff0000",
-    project=list(z=TRUE)
-  )
-)
-) %>%
-  layout(
-    scene = list(
-      camera=list(
-        eye = list(x=1.87, y=0.88, z=-0.64)
-      )
-    )
-  )
-
-
-# Plot the data for a visual comparison
-plot(netto$par_inc_netto, netto$schnittek_netto_32, main = 'Test dataset x and y', col = "blue")
-points(nettosim[,1], nettosim[,2], col = '#FF000020', cex=0.5)
-legend('bottomright', c('Observed', 'Simulated'), col = c('blue', 'red'), pch=21)
-
-cor(netto, method = "kendall")
-cor(netto, method = "spearman")
-
-cor(nettosim, method = "kendall")
-cor(nettosim, method = "spearman")
-
-# looks good... 
-pairs.panels(netto)
-pairs.panels(nettosim)
 
 
 #####################################################################################
-                          ########try consumption copula#####
+                          ######## consumption copula#####
 #####################################################################################
 
-consumption <- select(mydata, one_of(c("schnittek_konsum_32", "par_inc_konsum", "schnittek_einzel_32", "par_inc_einzel")))
-sum(is.na(consumption$schnittek_konsum_32)) # there are missings
-sum(is.na(consumption$par_inc_konsum)) # 8 missings!
+consumption <- select(mydata, one_of(c("schnittek_konsum_32", "par_inc_konsum")))
+sum(is.na(consumption$schnittek_konsum_32)) # there are 621 missings
+sum(is.na(consumption$par_inc_konsum)) # 620 missings!
 
 consumption <- filter(consumption, !((is.na(schnittek_konsum_32)) | (is.na(par_inc_konsum))))
 
 #use separate fit in order to determine which copula model is adequate:
-consumptionmat <- select(consumption,one_of(c("schnittek_konsum_32", "par_inc_konsum"))) 
-consopobs <- pobs(as.matrix(consumptionmat))
+consopobs <- pobs(as.matrix(consumption))
 consoverview <- BiCopEstList(consopobs[,1], consopobs[,2],rotations = T)
 constest <- consoverview$summary
 arrange(constest, AIC, BIC)
 #seems to be appropriate to choose family=13 -> survClayton!
-loglikecons <- pre.marginals.copula(consumptionmat)
+loglikecons <- pre.marginals.copula(consumption)
 
 suclayton <- surClaytonCopula(param = loglikecons[2])
 #indicates dependency particularly in the right tails!
 
 #plot
-persp(surClaytonCopula(param = loglikecons[2]),dCopula)
-# and more beatiful:
+#more beautiful:
 persp(surClaytonCopula(param = loglikecons[2]), dCopula,
       xlab = "transformed x consumption", ylab = "transformed y consumption",
       main = "Survical Clayton Copula with ML paramter vector", phi = 20, theta = 30)
@@ -366,46 +298,95 @@ dev.copy(pdf,'surclaytoncopula.pdf')
 dev.off()
 
 #sampling from it:
-consample <- rCopula(3965,surClaytonCopula(param = loglikecons[2]))
-plot(consample[,1],consample[,2],pch='.',col='blue')
+#consample <- rCopula(3965,surClaytonCopula(param = loglikecons[2]))
 
-cor(consample,method='spearman')
-#simulated dependency structure:
-pairs.panels(consample)
-#actual rank transformed dependency structure
-pairs.panels(consopobs)
-# we get a somewhat lower spearman's correlation in our copula model
+x2 <- replicate(reps, copula.gen2(draws = 5000, copula = suclayton))
+x2 <- as.data.frame.matrix(x2)
+x2.dist <- sapply(x2, function(y) tryCatch({hellinger(y[[1]], y[[2]], lower = 0, upper = Inf, method = 1) }, error=function(e){cat("ERROR :",conditionMessage(e), "\n")}))
+repsvec <- c(1:reps)
+x2.dist <- nullToNA(x2.dist)
+x2.dist <- ldply(x2.dist, data.frame)
+x2.dist <- bind_cols(x2.dist, reps = repsvec)
+
+k <- ggplot(x2.dist, aes(reps, X..i.., group = 1)) +
+  #geom_bar(stat = "identity") +
+  geom_point() +
+  geom_smooth() +
+  labs(x = " No. of Repetitions", 
+       y = "Hellinger Distance", 
+       title = "Hellinger distance between gross income and consumtion copula models") +
+  scale_x_continuous(breaks = c(seq(from = 0, to = reps, by = 50)))
+print(k)
+ggsave("base_consumption_distance.pdf")
+
+
+# creating multivariate distribution:
 
 
 
-#### compare to baseline####
+#for lognormal
+cons1 <- consumption %>% 
+  mutate(kidsconsumption = ifelse(schnittek_konsum_32==0,1, schnittek_konsum_32)) %>% 
+  mutate(parentsconsumption = ifelse(par_inc_konsum==0,1,par_inc_konsum))
+
+#parents consumtion
+descdist(cons1$parentsconsumption, discrete=FALSE, boot=5000)
+
+fit2_lognormal_cons <- fitdist(cons1$parentsconsumption, "lnorm")
+
+fit2_gamma_cons <- fitdist(cons1$parentsconsumption, "gamma", method = "mme")
+
+fit2_weibull_cons <- fitdist(cons1$parentsconsumption, "weibull")
 
 
-consumptionmat2 <- select(consumption,one_of(c("schnittek_einzel_32", "par_inc_einzel"))) 
-basepobs2 <- pobs(as.matrix(consumptionmat2))
-base2overview <- BiCopEstList(basepobs2[,1], basepobs2[,2],rotations = T)
-base2test <- base2overview$summary
-arrange(base2test, AIC, BIC)
-#seems to be appropriate to choose family=14 -> surGumbel!
-loglikebase2 <- pre.marginals.copula(consumptionmat2)
+ggplot(data = cons1) +
+  geom_histogram(data = as.data.frame(cons1$parentsconsumption), aes(x=cons1$parentsconsumption, y=..density.. , fill="histogram"), colour = NA ,alpha = 0.5) +
+  geom_line(aes(x=cons1$parentsconsumption, y=dgamma(cons1$parentsconsumption,fit2_gamma_cons$estimate[1], fit2_gamma_cons$estimate[2]), col="gamma distribution"), alpha = 0.7, size = 1) + 
+  geom_line(aes(x=cons1$parentsconsumption, y=dweibull(cons1$parentsconsumption,fit2_weibull_cons$estimate[1], fit2_weibull_cons$estimate[2]), col="weibull distribution"), alpha = 0.7, size = 1) + 
+  geom_line(aes(x=cons1$parentsconsumption, y=dlnorm(cons1$parentsconsumption,fit2_lognormal_cons$estimate[1], fit2_lognormal_cons$estimate[2]), col="lognormal distribution"), alpha = 0.7, size = 1) + 
+  xlab("Parents consumption spendings in €") +
+  ggtitle("Comparing marginal densities for parents consumtion")+
+  guides(col=guide_legend(title="Distributional Families"))+
+  guides(fill=guide_legend(title="Empirical Density"))+
+  theme_classic()
 
-surbase2 <- surGumbelCopula(param = loglikebase2[2])
-#indicates dependency particularly in the right tails!
+ggsave("nettoParentsdist.pdf")
 
-#sampling from it:
-base2sample <- rCopula(3965,surbase2)
+#choose gamma 
 
-cor(base2samole,method='spearman')
-#simulated dependency structure:
-pairs.panels(base2samole)
-#actual rank transformed dependency structure
-pairs.panels(basepobs2)
-# we get a somewhat higher spearman's correlation in our copula model
+descdist(cons1$kidsconsumption, discrete=FALSE, boot=5000)
 
-#bivariate difference in distribution
-differencecons <- hellinger(consample, base2sample)
-#difference in marginals
-differenceks1 <- ks.test(consample[,1], base2sample[,1])
-differenceks2 <- ks.test(consample[,2], base2sample[,2])
-# statistically non-different from base sample!
+
+fit2_lognormal_conskids <- fitdist(cons1$kidsconsumption, "lnorm")
+
+fit2_gamma_conskids <- fitdist(cons1$kidsconsumption, "gamma", method = "mme")
+
+fit2_weibull_conskids <- fitdist(cons1$kidsconsumption, "weibull")
+
+ggplot(data = cons1) +
+  geom_histogram(data = as.data.frame(cons1$kidsconsumption), aes(x=cons1$kidsconsumption, y=..density.. , fill="histogram"), colour = NA ,alpha = 0.5) +
+  geom_line(aes(x=cons1$kidsconsumption, y=dgamma(cons1$kidsconsumption,fit2_gamma_conskids$estimate[1], fit2_gamma_conskids$estimate[2]), col="gamma distribution"), alpha = 0.7, size = 1) + 
+  geom_line(aes(x=cons1$kidsconsumption, y=dweibull(cons1$kidsconsumption,fit2_weibull_conskids$estimate[1], fit2_weibull_conskids$estimate[2]), col="weibull distribution"), alpha = 0.7, size = 1) + 
+  geom_line(aes(x=cons1$kidsconsumption, y=dlnorm(cons1$kidsconsumption,fit2_lognormal_conskids$estimate[1], fit2_lognormal_conskids$estimate[2]), col="lognormal distribution"), alpha = 0.7, size = 1) + 
+  xlab("Kids consumption spendings in €") +
+  ggtitle("Comparing marginal densities for kids consumption")+
+  guides(col=guide_legend(title="Distributional Families"))+
+  guides(fill=guide_legend(title="Empirical Density"))+
+  theme_classic()
+
+ggsave("consKidsdist.pdf")
+
+#also choose gamma!
+
+myconsdist <- mvdc(suclayton, margins = c("gamma","gamma"), paramMargins = list(list(shape = fit2_gamma_cons$estimate[1], rate = fit2_gamma_cons$estimate[2]), list(shape = fit2_gamma_conskids$estimate[1], rate = fit2_gamma_conskids$estimate[2])))
+conssim <- rMvdc(5000, mynettodist)
+write.csv(conssim, "consumption.csv")
+
+
+
+
+
+
+
+
 
