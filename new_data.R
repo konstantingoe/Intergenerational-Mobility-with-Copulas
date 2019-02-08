@@ -180,6 +180,7 @@ loglikebase1 <- pre.marginals.copula(nettomat1)
 surbase1 <- surBB8Copula(param = c(loglikebase1[2], loglikebase1[3]))
 #indicates dependency particularly in the right tails!
 persp(surbase1,dCopula)
+#take family=9 
 
 #sampling from it:
 base1sample <- rCopula(3965,surbase1)
@@ -359,7 +360,7 @@ pairs.panels(consopobs)
 
 
 
-#### compare to baseline####
+#### compare to baseline#### to full baseline not without missing
 
 
 consumptionmat2 <- select(consumption,one_of(c("schnittek_einzel_32", "par_inc_einzel"))) 
@@ -390,3 +391,4 @@ differenceks1 <- ks.test(consample[,1], base2sample[,1])
 differenceks2 <- ks.test(consample[,2], base2sample[,2])
 # statistically non-different from base sample!
 
+#hellinger-Distanz, außerdem neue Hellinger-Distanz für 60er, 70er, 80er
