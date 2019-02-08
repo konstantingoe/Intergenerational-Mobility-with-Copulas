@@ -34,6 +34,16 @@ copula.generator <- function(draws=draws){
   return(x.draws)
 }
 
+copula.gen2 <- function(draws=draws, copula=copula){
+  
+  w <- rCopula(draws, copula)
+  x <- rCopula(draws, bb7)
+  
+  x.draws <- list(w,x)
+  
+  return(x.draws)
+}
+
 
 
 
