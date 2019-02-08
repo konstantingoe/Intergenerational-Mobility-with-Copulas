@@ -48,7 +48,7 @@ persp(BB7Copula(param), dCopula)
 # and more beatiful:
 persp(BB7Copula(param), dCopula,
       xlab = "transformed x income", ylab = "transformed y income",
-      main = "Survival-Gumbel Copula with ML paramter vector", phi = 20, theta = 30)
+      main = "BB7 Copula with ML paramter vector", phi = 20, theta = 30)
 dev.copy(pdf,'bb7copula.pdf')
 dev.off()
 
@@ -173,7 +173,7 @@ dev.off()
 #where there is high correlation in the extreme values (the tails of the distribution).
 
 #sampling from it:
-nettosample <- rCopula(3965,tCopula(dim=2,loglikenetto[2],df=loglikenetto[3]))
+nettosample <- rCopula(5000,tCopula(dim=2,loglikenetto[2],df=loglikenetto[3]))
 plot(nettosample[,1],nettosample[,2],pch='.',col='blue')
 
 cor(nettosample,method='spearman')
@@ -189,13 +189,6 @@ tobject <- tCopula(dim=2,loglikenetto[2],df=loglikenetto[3])
 
 reps <- 500
 draws <- 5000
-
-<<<<<<< HEAD
-surbase1 <- surBB8Copula(param = c(loglikebase1[2], loglikebase1[3]))
-#indicates dependency particularly in the right tails!
-persp(surbase1,dCopula)
-#take family=9 
-=======
 x1 <- replicate(reps, copula.gen2(draws = 5000, copula = tobject))
 x1 <- as.data.frame.matrix(x1)
 x1.dist <- sapply(x1, function(y) tryCatch({hellinger(y[[1]], y[[2]], lower = 0, upper = Inf, method = 1) }, error=function(e){cat("ERROR :",conditionMessage(e), "\n")}))
@@ -203,7 +196,6 @@ repsvec <- c(1:reps)
 x1.dist <- nullToNA(x1.dist)
 x1.dist <- ldply(x1.dist, data.frame)
 x1.dist <- bind_cols(x1.dist, reps = repsvec)
->>>>>>> 17e5e86c561903822de4df79f444b597555a4078
 
 j <- ggplot(x1.dist, aes(reps, X..i.., group = 1)) +
   #geom_bar(stat = "identity") +
@@ -388,17 +380,6 @@ ggsave("consKidsdist.pdf")
 myconsdist <- mvdc(suclayton, margins = c("gamma","gamma"), paramMargins = list(list(shape = fit2_gamma_cons$estimate[1], rate = fit2_gamma_cons$estimate[2]), list(shape = fit2_gamma_conskids$estimate[1], rate = fit2_gamma_conskids$estimate[2])))
 conssim <- rMvdc(5000, mynettodist)
 write.csv(conssim, "consumption.csv")
-
-
-
-<<<<<<< HEAD
-#### compare to baseline#### to full baseline not without missing
-=======
->>>>>>> 17e5e86c561903822de4df79f444b597555a4078
-
-
-
-
 
 
 #hellinger-Distanz, außerdem neue Hellinger-Distanz für 60er, 70er, 80er
