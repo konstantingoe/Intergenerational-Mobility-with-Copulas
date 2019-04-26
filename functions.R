@@ -22,12 +22,12 @@ generator <- function(draws=draws){
   return(x.draws)
 }
 
-copula.generator <- function(draws=draws){
+copula.generator <- function(draws=draws, gen = gen, six = six, seven = seven, eight = eight){
   
-  w <- rCopula(draws, BB7Copula(par.full))
-  x <- rCopula(draws, surGumbelCopula(par.60))
-  y <- rCopula(draws, BB7Copula(par.70))
-  z <- rCopula(draws, claytonCopula(par.80))
+  w <- rCopula(draws, gen)
+  x <- rCopula(draws, six)
+  y <- rCopula(draws, seven)
+  z <- rCopula(draws, eight)
   
   x.draws <- list(w,x,y,z)
   
@@ -37,7 +37,7 @@ copula.generator <- function(draws=draws){
 copula.gen2 <- function(draws=draws, copula=copula){
   
   w <- rCopula(draws, copula)
-  x <- rCopula(draws, bb7)
+  x <- rCopula(draws, gumbelcop)
   
   x.draws <- list(w,x)
   
